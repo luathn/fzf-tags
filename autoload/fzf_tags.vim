@@ -4,6 +4,12 @@ if !exists('g:fzf_tags_prompt')
   let g:fzf_tags_prompt = ' 🔎 '
 endif
 
+let g:fzf_tags_default_colors = {
+  \ 'ordinal': 'Comment',
+  \ 'filename': 'Normal',
+  \ 'class': 'Tag',
+  \ 'cmd': 'Function' }
+
 let s:actions = {
   \ 'ctrl-t': 'tab split',
   \ 'ctrl-x': 'split',
@@ -67,15 +73,15 @@ function! s:source_lines(identifier)
 endfunction
 
 function! s:tag_to_string(index, tag_dict)
-  let components = [a:index + 1]
+  let components = [s:set_color('ordinal', (a:index + 1))]
   if has_key(a:tag_dict, 'filename')
-    call add(components, s:magenta(a:tag_dict['filename']))
+    call add(components, s:set_color('filename', a:tag_dict['filename']))
   endif
   if has_key(a:tag_dict, 'class')
-    call add(components, s:green(a:tag_dict['class']))
+    call add(components, s:set_color('class', a:tag_dict['class']))
   endif
   if has_key(a:tag_dict, 'cmd')
-    call add(components, s:red(a:tag_dict['cmd']))
+    call add(components, s:set_color('cmd', a:tag_dict['cmd']))
   endif
   return components
 endfunction
@@ -109,12 +115,26 @@ function! s:sink(identifier, selection)
   execute l:count . 'tag' a:identifier
 endfunction
 
-function! s:green(s)
-  return "\033[32m" . a:s . "\033[m"
+function! s:group_to_hex(group_name)
+  let gui = has('termguicolors') && &termguicolors
+  let fam = gui ? 'gui' : 'cterm'
+  let pattern = gui ? '^#[a-f0-9]\+' : '^[0-9]\+$'
+  let code = synIDattr(synIDtrans(hlID(a:group_name)), 'fg', fam)
+  if code =~? pattern
+    return code
+  endif
+  return ''
 endfunction
-function! s:magenta(s)
-  return "\033[35m" . a:s . "\033[m"
+
+function! s:get_color(field)
+  if exists('g:fzf_tags_colors') && has_key(g:fzf_tags_colors, a:field)
+    return s:group_to_hex(g:fzf_tags_colors[a:field])
+  endif
+  return s:group_to_hex(g:fzf_tags_default_colors[a:field])
 endfunction
-function! s:red(s)
-  return "\033[31m" . a:s . "\033[m"
+
+function! s:set_color(field, str)
+  let hex_color = s:get_color(a:field)
+  let color = '38;2;'.join(map([hex_color[1:2], hex_color[3:4], hex_color[5:6]], 'str2nr(v:val, 16)'), ';')
+  return "\x1b[" . color . "m" . a:str . "\x1b[m"
 endfunction

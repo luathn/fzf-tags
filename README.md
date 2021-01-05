@@ -50,3 +50,12 @@ To replace the default prompt `🔎`:
 ```vim
 let g:fzf_tags_prompt = "Gd "
 ```
+
+To customize fzf_tags colors:
+```
+  let g:fzf_tags_colors = {
+    \ 'number': 'Comment',
+    \ 'filename': 'Normal',
+    \ 'class': 'Tag',
+    \ 'cmd': 'Function' }
+```
